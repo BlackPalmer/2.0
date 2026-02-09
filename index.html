@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width,initial-scale=1" />
+	<title>Will you be my Valentine?</title>
+	<style>
+		/* ===== Color palette & base ===== */
+		:root{
+			--bg: #fff5f8;
+			--card: #ffffff;
+			--pink-1: #ff9bb3;
+			--pink-2: #ff6f91;
+			--rose: #ff4d6d;
+			--accent: #ffadcc;
+			--muted: #ffeff4;
+			--text: #3b2b2b;
+		}
+		*{box-sizing:border-box}
+		html,body{height:100%}
+		body{
+			margin:0;
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+			background: radial-gradient(circle at 10% 10%, #fff0f4 0%, transparent 20%),
+									radial-gradient(circle at 90% 90%, #fff6f8 0%, transparent 20%),
+									var(--bg);
+			color:var(--text);
+			display:flex;
+			align-items:center;
+			justify-content:center;
+			padding:24px;
+			overflow:hidden;
+		}
+
+		/* floating soft hearts in the background */
+		.bg-heart{
+			position:fixed;
+			color:var(--accent);
+			font-size:24px;
+			opacity:0.12;
+			animation:floatUp 12s linear infinite;
+			pointer-events:none;
+			transform-origin:center;
+		}
+		@keyframes floatUp{
+			0%{transform:translateY(0) scale(0.9); opacity:0}
+			10%{opacity:0.12}
+			50%{opacity:0.08}
+			100%{transform:translateY(-120vh) scale(1.1); opacity:0}
+		}
+
+		/* Card */
+		.card{
+			width:100%;
+			max-width:720px;
+			background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(255,245,249,0.9));
+			border-radius:20px;
+			padding:36px;
+			box-shadow: 0 10px 30px rgba(255,105,145,0.12);
+			text-align:center;
+			position:relative;
+			overflow:visible;
+			animation:popIn 700ms cubic-bezier(.2,.9,.3,1);
+		}
+		@keyframes popIn{ from{transform:translateY(10px) scale(.98); opacity:0} to{transform:none; opacity:1} }
+
+		h1{
+			margin:0 0 8px 0;
+			font-size:clamp(22px,4.6vw,44px);
+			letter-spacing:-0.02em;
+			display:flex;
+			align-items:center;
+			justify-content:center;
+			gap:10px;
+		}
+		p.lead{
+			margin:0 0 18px 0;
+			color:#53363a;
+			opacity:0.95;
+			font-size:clamp(14px,2.4vw,18px);
+		}
+
+		/* Buttons area */
+		.buttons{
+			margin-top:6px;
+			display:flex;
+			align-items:center;
+			justify-content:center;
+			gap:18px;
+			min-height:88px;
+			position:relative;
+		}
+
+		button{
+			border:0;
+			padding:12px 20px;
+			border-radius:12px;
+			font-size:16px;
+			cursor:pointer;
+			transition:transform 180ms ease, box-shadow 180ms ease, opacity 300ms ease;
+			box-shadow: 0 6px 18px rgba(255,105,145,0.12);
+			user-select:none;
+		}
+
+		.yes{
+			background: linear-gradient(135deg,var(--pink-2),var(--rose));
+			color:white;
+			padding:12px 26px;
+			transform-origin:center;
+		}
+		.yes:hover{ transform:translateY(-4px) scale(1.03); box-shadow:0 10px 26px rgba(255,76,120,0.18)}
+
+		.record-panel{ margin-top:18px; display:flex; gap:10px; justify-content:center; align-items:center }
+		.record-btn{ background:transparent; border:2px dashed rgba(255,100,140,0.18); padding:8px 12px; border-radius:10px; color:var(--rose); cursor:pointer }
+		.record-btn.recording{ background:linear-gradient(90deg,#ffd6e0,#ffeef6); border-style:solid }
+
+		/* No button will be absolutely positioned inside .buttons */
+		.no{
+			position:absolute;
+			left:calc(50% + 120px);
+			top:10px;
+			background:var(--card);
+			color:var(--rose);
+			border:2px solid rgba(255,77,109,0.12);
+			padding:10px 18px;
+			transition: left 320ms cubic-bezier(.2,.9,.2,1), top 320ms cubic-bezier(.2,.9,.2,1), transform 160ms ease;
+		}
+		.no:hover{ transform:translateY(-3px) rotate(-4deg) }
+
+		/* Success overlay */
+		.success{
+			position:fixed;
+			inset:0;
+			display:flex;
+			align-items:center;
+			justify-content:center;
+			background:linear-gradient(180deg, rgba(255,255,255,0.0), rgba(255,240,245,0.65));
+			z-index:40;
+			opacity:0;
+			pointer-events:none;
+			transition:opacity 400ms ease;
+		}
+		.success.show{ opacity:1; pointer-events:auto }
+		.success-card{
+			background:var(--card);
+			padding:28px 36px;
+			border-radius:18px;
+			box-shadow:0 18px 50px rgba(255,90,130,0.12);
+			text-align:center;
+			transform:translateY(8px);
+			animation:popIn 500ms ease;
+		}
+		.success-card h2{ margin:0 0 8px 0; font-size:28px }
+		.success-card p{ margin:0; color:#5b3b3f }
+
+		/* small responsive tweaks */
+		@media (max-width:520px){
+			.no{ left:60%; top:14px }
+			.buttons{ min-height:110px }
+		}
+
+		/* little heart particle style created by JS */
+		.particle{
+			position:fixed;
+			font-size:22px;
+			pointer-events:none;
+			transform:translate(-50%,-50%);
+			animation:rise 1600ms ease-out forwards;
+			z-index:60;
+		}
+		@keyframes rise{
+			0%{transform:translate(-50%,0) scale(0.8); opacity:1}
+			100%{transform:translate(-50%,-140px) scale(1.2); opacity:0}
+		}
+	</style>
+</head>
+<body>
+	<div class="card" role="main">
+		<h1>Will you be my Valentine? <span aria-hidden="true">💖</span></h1>
+		<p class="lead" id="subtext">I promise unlimited love, laughter, and snacks.</p>
+
+		<div class="buttons" aria-hidden="false">
+			<button class="yes" id="yesBtn" aria-label="Yes, I'll be your Valentine">Yes 💘</button>
+			<button class="no" id="noBtn" aria-label="No, I won't">No 😢</button>
+		</div>
+		<div class="record-panel">
+			<button id="recordBtn" class="record-btn">Download animation (WebM)</button>
+			<span id="recordHint" style="color:#8a5; font-size:13px; opacity:0.85"></span>
+		</div>
+	</div>
+
+	<!-- Success overlay (hidden until yes) -->
+	<div class="success" id="success">
+		<div class="success-card" role="dialog" aria-modal="true" aria-labelledby="successTitle">
+			<h2 id="successTitle">YAY!! 💕 I knew you’d say yes!</h2>
+			<p id="personalLine"></p>
+		</div>
+	</div>
+
+	<script>
+		/*
+			Minimal JS to handle interactions:
+			- Evasive 'No' button moves to random positions on hover/touch
+			- 'Yes' triggers celebration and hides buttons
+			- Personalization via `gfName` variable
+		*/
+
+		// Personalization: set your girlfriend's name here
+		const gfName = 'Love'; // <-- change this to her name (e.g., 'Emma')
+
+		const yesBtn = document.getElementById('yesBtn');
+		const noBtn = document.getElementById('noBtn');
+		const success = document.getElementById('success');
+		const personalLine = document.getElementById('personalLine');
+		const subtext = document.getElementById('subtext');
+
+		// Use name in the subtext if provided
+		if(gfName && gfName.trim() !== ''){
+			subtext.textContent = `I promise unlimited love, laughter, and snacks, ${gfName}.`;
+			personalLine.textContent = `— ${gfName} 💕`;
+		}
+
+		// Utility: clamp new positions to keep button within viewport with padding
+		function getSafePosition(btnWidth, btnHeight){
+			const padding = 12; // keep away from edge
+			const maxX = Math.max(window.innerWidth - btnWidth - padding, padding);
+			const maxY = Math.max(window.innerHeight - btnHeight - padding, padding);
+			return {minX: padding, minY: padding, maxX, maxY};
+		}
+
+		// Strong evasive behavior: move away from a point (cursor), prefer edges opposite to cursor
+		function moveNoButtonAway(fromX, fromY, attempts = 12){
+			const rect = noBtn.getBoundingClientRect();
+			const btnW = rect.width, btnH = rect.height;
+			const {minX, minY, maxX, maxY} = getSafePosition(btnW, btnH);
+
+			const yesRect = yesBtn.getBoundingClientRect();
+
+			// Determine candidate positions and pick one maximizing distance from the 'from' point and from yes button
+			let best = null;
+			let bestScore = -Infinity;
+
+			for(let i=0;i<attempts;i++){
+				// bias towards edges opposite the cursor
+				const edgeBiasX = (fromX < window.innerWidth/2) ? (maxX) : minX;
+				const edgeBiasY = (fromY < window.innerHeight/2) ? (maxY) : minY;
+				const rx = edgeBiasX + (Math.random()*0.35 - 0.175) * (maxX - minX);
+				const ry = edgeBiasY + (Math.random()*0.35 - 0.175) * (maxY - minY);
+
+				// score: distance from cursor + small weight for distance from yes button
+				const dx = rx - fromX;
+				const dy = ry - fromY;
+				const dCursor = Math.hypot(dx, dy);
+
+				const dx2 = rx - yesRect.left;
+				const dy2 = ry - yesRect.top;
+				const dYes = Math.hypot(dx2, dy2);
+
+				const score = dCursor * 1.4 + dYes * 0.6 + (Math.random() * 20);
+				if(score > bestScore){ bestScore = score; best = {x:rx, y:ry}; }
+			}
+
+			if(!best) return;
+
+			// convert to position relative to the buttons container so absolute positioning still applies
+			const buttonsContainer = noBtn.parentElement.getBoundingClientRect();
+			let left = Math.min(Math.max(best.x - buttonsContainer.left, minX), buttonsContainer.width - btnW - 8);
+			let top = Math.min(Math.max(best.y - buttonsContainer.top, minY - 8), buttonsContainer.height - btnH - 8);
+
+			noBtn.style.left = `${left}px`;
+			noBtn.style.top = `${top}px`;
+		}
+
+		// Convenience wrapper: reposition or nudge the No button when a simple call is needed
+		function moveNoButton(){
+			// choose a point near the center as the 'from' location so the button flees to an edge
+			const fromX = window.innerWidth/2;
+			const fromY = window.innerHeight/2;
+			const attempts = (window.innerWidth < 420) ? 8 : 14; // slightly fewer attempts on very small screens
+			moveNoButtonAway(fromX, fromY, attempts);
+		}
+
+		// Throttle movement so it's not overwhelming
+		let lastEvade = 0;
+		function tryEvade(fromX, fromY){
+			const now = performance.now();
+			if(now - lastEvade < 110) return; // 110ms throttle
+			lastEvade = now;
+			moveNoButtonAway(fromX, fromY, 14);
+		}
+
+		// Move when hovered or touched: use cursor position
+		noBtn.addEventListener('mouseenter', function(e){ tryEvade(e.clientX, e.clientY); });
+		noBtn.addEventListener('touchstart', function(e){ e.preventDefault(); const t = e.touches[0]; tryEvade(t.clientX, t.clientY); }, {passive:false});
+		// also move if the user tries to click (mousedown) quickly — jump multiple times
+		noBtn.addEventListener('mousedown', function(e){ e.preventDefault(); const x = e.clientX, y = e.clientY; tryEvade(x,y); setTimeout(()=> tryEvade(x+40,y+20), 80); setTimeout(()=> tryEvade(x-60,y-10), 180); });
+
+		// Prevent keyboard focus from being a trap: on focus, move it too
+		noBtn.addEventListener('focus', function(){
+			const r = noBtn.getBoundingClientRect();
+			tryEvade(r.left + r.width/2, r.top + r.height/2);
+			noBtn.blur();
+		});
+
+		// Reactive repel while cursor moves near the button
+		let rafScheduled = false;
+		document.addEventListener('mousemove', function(e){
+			const rect = noBtn.getBoundingClientRect();
+			const dx = e.clientX - (rect.left + rect.width/2);
+			const dy = e.clientY - (rect.top + rect.height/2);
+			const dist = Math.hypot(dx, dy);
+			if(dist < 140){
+				if(!rafScheduled){
+					rafScheduled = true;
+					requestAnimationFrame(()=>{
+						tryEvade(e.clientX, e.clientY);
+						rafScheduled = false;
+					});
+				}
+			}
+		});
+
+		// Play a soft sparkle using WebAudio for Yes click (no external files)
+		function playSparkle(){
+			try{
+				const ctx = new (window.AudioContext || window.webkitAudioContext)();
+				const o = ctx.createOscillator();
+				const g = ctx.createGain();
+				o.type = 'sine';
+				o.frequency.value = 880; // A5-ish
+				g.gain.value = 0.0001;
+				o.connect(g);
+				g.connect(ctx.destination);
+				const now = ctx.currentTime;
+				g.gain.setValueAtTime(0.0001, now);
+				g.gain.exponentialRampToValueAtTime(0.02, now + 0.06);
+				g.gain.exponentialRampToValueAtTime(0.0001, now + 0.6);
+				o.start(now);
+				o.stop(now + 0.7);
+			}catch(e){ /* audio not supported */ }
+		}
+
+		// Create small heart particles for celebration
+		function spawnHearts(x, y, count=12){
+			for(let i=0;i<count;i++){
+				const el = document.createElement('div');
+				el.className = 'particle';
+				el.style.left = (x + (Math.random()*60-30)) + 'px';
+				el.style.top = (y + (Math.random()*30-10)) + 'px';
+				el.textContent = ['💖','💕','💘','💗'][Math.floor(Math.random()*4)];
+				el.style.fontSize = (12 + Math.random()*24) + 'px';
+				el.style.opacity = (0.8 + Math.random()*0.4);
+				el.style.transform = `translate(-50%, -50%) rotate(${Math.random()*60-30}deg)`;
+				document.body.appendChild(el);
+				// animate horizontal drift via transition
+				el.animate([
+					{ transform: `translate(-50%, -50%) translateX(0)`, opacity:1 },
+					{ transform: `translate(-50%, -50%) translateX(${(Math.random()*120-60)}px) translateY(-140px)`, opacity:0 }
+				], { duration: 1400 + Math.random()*600, easing: 'cubic-bezier(.2,.9,.2,1)' });
+				setTimeout(()=> el.remove(), 2200 + Math.random()*600);
+			}
+		}
+
+		// create subtle floating hearts in background
+		(function createBackgroundHearts(){
+			for(let i=0;i<8;i++){
+				const h = document.createElement('div');
+				h.className = 'bg-heart';
+				h.style.left = (Math.random()*100) + 'vw';
+				h.style.top = (80 + Math.random()*40) + 'vh';
+				h.style.fontSize = (18 + Math.random()*36) + 'px';
+				h.style.animationDuration = (10 + Math.random()*14) + 's';
+				h.style.opacity = (0.06 + Math.random()*0.12);
+				h.textContent = '❤';
+				document.body.appendChild(h);
+			}
+		})();
+
+		// On Yes: show success message, spawn hearts, play sound, hide buttons
+		yesBtn.addEventListener('click', function(e){
+			// play gentle sound
+			playSparkle();
+
+			// hide and disable buttons
+			yesBtn.style.opacity = '0';
+			noBtn.style.opacity = '0';
+			yesBtn.disabled = true;
+			noBtn.disabled = true;
+
+			setTimeout(()=>{
+				success.classList.add('show');
+				// spawn hearts from center of viewport
+				const cx = window.innerWidth/2;
+				const cy = window.innerHeight/2 - 20;
+				spawnHearts(cx, cy, 22);
+			}, 260);
+		});
+
+		// Ensure noBtn stays on-screen after resize — reposition if it drifts out of bounds
+		window.addEventListener('resize', function(){
+			try{
+				const rect = noBtn.getBoundingClientRect();
+				const {minX,minY,maxX,maxY} = getSafePosition(rect.width, rect.height);
+				if(rect.left < minX || rect.top < minY || rect.right > window.innerWidth - 8 || rect.bottom > window.innerHeight - 8){
+					// reposition to a safe location
+					moveNoButton();
+				}
+			}catch(e){ /* defensive: if elements missing, do nothing */ }
+		});
+
+		// initial placement: center-ish to the right
+		window.addEventListener('load', ()=>{
+			const container = noBtn.parentElement.getBoundingClientRect();
+			noBtn.style.left = (container.width/2 + 80) + 'px';
+			noBtn.style.top = '16px';
+		});
+
+		/* Recording: render a short canvas animation that mimics the evasive No button,
+			 capture it as WebM and offer for download. GIF conversion can be done later.
+		*/
+		const recordBtn = document.getElementById('recordBtn');
+		const recordHint = document.getElementById('recordHint');
+
+		// Feature-detect recording support and gracefully disable with a hint if not supported
+		const canRecord = !!(window.MediaRecorder && HTMLCanvasElement.prototype.captureStream);
+		if(!canRecord){
+			if(recordBtn) { recordBtn.disabled = true; recordBtn.title = 'Recording not supported'; }
+			if(recordHint) recordHint.textContent = 'Recording not supported on this browser.';
+		} else {
+			recordBtn.addEventListener('click', async ()=>{
+			recordBtn.disabled = true;
+			recordBtn.classList.add('recording');
+			recordBtn.textContent = 'Recording...';
+			recordHint.textContent = '';
+
+			// create canvas and draw loop
+			const w = 720, h = 360;
+			const canvas = document.createElement('canvas');
+			canvas.width = w; canvas.height = h;
+			const ctx = canvas.getContext('2d');
+
+			// simple simulation state
+			const yes = {x: w*0.28, y: h*0.6, w:140, h:48};
+			let no = {x: w*0.62, y: h*0.55, w:120, h:44};
+
+			// generate a set of target moves for the No button to simulate evasive behavior
+			const moves = [];
+			for(let i=0;i<10;i++){
+				moves.push({x: Math.random()*(w-120)+20, y: Math.random()*(h-80)+20, t: 220 + Math.random()*160});
+			}
+
+			// recording via MediaRecorder
+			const stream = canvas.captureStream(30);
+			const recorder = new MediaRecorder(stream, {mimeType: 'video/webm;codecs=vp9'});
+			const chunks = [];
+			recorder.ondataavailable = e => { if(e.data && e.data.size) chunks.push(e.data); };
+
+			// draw frame function
+			let time = 0; let idx = 0; let subT = 0;
+			function draw(dt){
+				time += dt; subT += dt;
+				// background
+				ctx.fillStyle = '#fff6f8'; ctx.fillRect(0,0,w,h);
+				// heading
+				ctx.fillStyle = '#3b2b2b'; ctx.font = '24px system-ui'; ctx.textAlign='center';
+				ctx.fillText('Will you be my Valentine? 💖', w/2, 56);
+				ctx.fillStyle = '#5b3b3f'; ctx.font = '14px system-ui'; ctx.fillText('I promise unlimited love, laughter, and snacks.', w/2, 86);
+
+				// yes button
+				ctx.fillStyle = '#ff6f91'; roundRect(ctx, yes.x, yes.y, yes.w, yes.h, 12, true);
+				ctx.fillStyle='white'; ctx.font='18px system-ui'; ctx.fillText('Yes 💘', yes.x + yes.w/2, yes.y + yes.h/2 +6);
+
+				// move no towards current target smoothly
+				const target = moves[idx % moves.length];
+				const dx = target.x - no.x; const dy = target.y - no.y;
+				no.x += dx * Math.min(1, dt/160);
+				no.y += dy * Math.min(1, dt/160);
+
+				if(Math.hypot(dx,dy) < 6){ idx++; }
+
+				// no button
+				ctx.fillStyle = '#fff'; roundRect(ctx, no.x, no.y, no.w, no.h, 10, true);
+				ctx.strokeStyle = 'rgba(255,77,109,0.16)'; ctx.lineWidth=2; ctx.strokeRect(no.x,no.y,no.w,no.h);
+				ctx.fillStyle='#ff4d6d'; ctx.font='16px system-ui'; ctx.fillText('No 😢', no.x + no.w/2, no.y + no.h/2 +6);
+
+				// floating hearts
+				for(let i=0;i<6;i++){
+					const hx = (time*0.06 + i*60) % w; const hy = 20 + ((i*30 + (time*0.02*i)) % 80);
+					ctx.fillStyle = 'rgba(255,120,150,0.12)'; ctx.font = '22px serif'; ctx.fillText('❤', hx, hy);
+				}
+			}
+
+			function roundRect(ctx,x,y,w,h,r,fill){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); if(fill) ctx.fill(); }
+
+			// play and record for ~2.8s
+			try{
+				recorder.start();
+			}catch(err){
+				// if recorder fails to start, bail gracefully
+				recordHint.textContent = 'Recording failed to start in this browser.';
+				recordBtn.disabled = false; recordBtn.classList.remove('recording'); recordBtn.textContent = 'Download animation (WebM)';
+				return;
+			}
+			let last = performance.now();
+			const duration = 2800; let acc = 0;
+			function frame(now){
+				const dt = now - last; last = now; acc += dt;
+				draw(dt);
+				if(acc < duration) requestAnimationFrame(frame);
+				else{
+					recorder.stop();
+				}
+			}
+			requestAnimationFrame(frame);
+
+			recorder.onstop = ()=>{
+				const blob = new Blob(chunks, {type: 'video/webm'});
+				const url = URL.createObjectURL(blob);
+				const a = document.createElement('a');
+				a.href = url; a.download = 'valentine-animation.webm';
+				document.body.appendChild(a); a.click(); a.remove();
+				URL.revokeObjectURL(url);
+				recordBtn.disabled = false; recordBtn.classList.remove('recording'); recordBtn.textContent = 'Download animation (WebM)';
+				recordHint.textContent = 'Saved as valentine-animation.webm';
+				// cleanup canvas
+				canvas.remove();
+				};
+			});
+			} // end feature-detect else
+		</script>
+</body>
+</html>
+
